@@ -28,8 +28,14 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, "dist"),
     emptyOutDir: true,
+    rollupOptions: {
+      output: {
+        format: "esm",               // Força o uso de Módulos ES
+        entryFileNames: "[name].js", // Garante a saída em .js em vez de .cjs
+      },
+    },
   },
   server: {
     fs: {
