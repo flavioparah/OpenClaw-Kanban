@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
-import { useSortable } from "@hello-pangea/dnd";
+import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { useState } from "react";

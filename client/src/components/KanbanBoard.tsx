@@ -12,11 +12,12 @@ import {
   DragStartEvent,
   DragOverEvent,
   DragEndEvent,
-} from "@hello-pangea/dnd";
+  useDroppable,
+} from "@dnd-kit/core";
 import {
   SortableContext,
   verticalListSortingStrategy,
-} from "@hello-pangea/dnd";
+} from "@dnd-kit/sortable";
 import { useUpdateTask } from "@/hooks/use-tasks";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
@@ -202,7 +203,6 @@ export function KanbanBoard({ tasks, isLoading }: KanbanBoardProps) {
 }
 
 // Helper component to make the column droppable
-import { useDroppable } from "@hello-pangea/dnd";
 
 function DroppableColumn({ id, children, className }: { id: string; children: React.ReactNode, className?: string }) {
   const { setNodeRef } = useDroppable({ id });
