@@ -12,7 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { useDeleteTask, useUpdateTask } from "@/hooks/use-tasks";
 import { useSortable } from "@hello-pangea/dnd";
-import { CSS } from "@hello-pangea/dnd";
+import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from "@/components/ui/dialog";
