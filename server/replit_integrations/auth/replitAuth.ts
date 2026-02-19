@@ -1,18 +1,17 @@
-import * as client from "openid-client";
 import passport from "passport";
 import session from "express-session";
 import type { Express, RequestHandler } from "express";
 import connectPg from "connect-pg-simple";
 
-// Mock de configuração para não quebrar o código original
+// Mock para ignorar a configuração do Replit que trava o deploy
 const getOidcConfig = async () => ({});
 
 export function getSession() {
-  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 week
+  const sessionTtl = 7 * 24 * 60 * 60 * 1000; // 1 semana
   const pgStore = connectPg(session);
   const sessionStore = new pgStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: true, // Alterado para true para facilitar o deploy inicial
+    createTableIfMissing: true, 
     ttl: sessionTtl,
     tableName: "sessions",
   });
@@ -23,7 +22,7 @@ export function getSession() {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: false, // Mude para false se não tiver HTTPS configurado ainda no Coolify
+      secure: false, 
       maxAge: sessionTtl,
     },
   });
@@ -38,7 +37,6 @@ export async function setupAuth(app: Express) {
   passport.serializeUser((user: any, cb) => cb(null, user));
   passport.deserializeUser((user: any, cb) => cb(null, user));
 
-  // Rotas de login/logout desativadas ou simplificadas
   app.get("/api/login", (req, res) => res.redirect("/"));
   app.get("/api/callback", (req, res) => res.redirect("/"));
   app.get("/api/logout", (req, res) => {
@@ -46,9 +44,8 @@ export async function setupAuth(app: Express) {
   });
 }
 
-// O "PULO DO GATO": Esta função agora sempre deixa você passar
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  // Simulamos um usuário logado para o sistema não dar erro 401
+  // Simula um usuário logado para ignorar o bloqueio de login do Replit
   (req as any).user = {
     id: "admin",
     email: "admin@admin.com",
