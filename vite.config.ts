@@ -28,12 +28,13 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist"),
+    // Importante: O front-end deve ir para dist/public
+    outDir: path.resolve(import.meta.dirname, "dist/public"),
     emptyOutDir: true,
     rollupOptions: {
       output: {
-        format: "esm",               // Força o uso de Módulos ES
-        entryFileNames: "[name].js", // Garante a saída em .js em vez de .cjs
+        format: "esm",
+        entryFileNames: "[name].js",
       },
     },
   },
