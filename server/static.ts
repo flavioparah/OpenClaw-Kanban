@@ -8,21 +8,22 @@ const __dirname = dirname(__filename);
 export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "..", "dist", "public");
 
-  // Serve arquivos estáticos primeiro
+  // Serve arquivos estáticos (js, css, imagens)
   app.use(express.static(distPath));
 
-  // Rota curinga compatível com Express 5
-  // Usamos ':path(.*)' para nomear o parâmetro e evitar o erro do path-to-regexp
-  app.get("/:path(.*)", (req, res, next) => {
-    // Ignora se for uma rota de API
+  // Em vez de usar strings com '*' ou '(.*)', usamos uma função middleware 
+  // que captura tudo o que não foi pego pelo static ou pelas rotas de API.
+  app.use((req, res, next) => {
+    // Se a requisição for para a API, deixa passar para as rotas do servidor
     if (req.path.startsWith("/api")) {
       return next();
     }
     
-    // Entrega o index.html para qualquer outra rota (essencial para SPAs)
+    // Para qualquer outra rota (navegação do usuário), entrega o index.html
     res.sendFile(path.resolve(distPath, "index.html"), (err) => {
       if (err) {
-        res.status(404).send("Front-end não encontrado. Verifique dist/public.");
+        // Se o arquivo não existir, retorna 404
+        res.status(404).send("Front-end não encontrado. Verifique se o build foi concluído com sucesso.");
       }
     });
   });
