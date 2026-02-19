@@ -9,11 +9,16 @@ import {
   type CreateApiTokenRequest,
   users,
   type User,
+  type InsertUser,
 } from "@shared/schema";
 import { eq, and, desc } from "drizzle-orm";
 import { randomBytes } from "crypto";
 
 export interface IStorage {
+  // Usuários (Necessário para o login simulado funcionar)
+  getUser(id: string): Promise<User | undefined>;
+  upsertUser(user: InsertUser): Promise<User>;
+
   // Tasks
   getTasks(userId: string): Promise<Task[]>;
   getTask(id: number): Promise<Task | undefined>;
@@ -21,7 +26,7 @@ export interface IStorage {
   updateTask(id: number, userId: string, updates: UpdateTaskRequest): Promise<Task | undefined>;
   deleteTask(id: number, userId: string): Promise<void>;
   
-  // Agent methods (no userId check for update, but scoped to token user in logic)
+  // Agent methods
   getTasksForAgent(userId: string): Promise<Task[]>;
   updateTaskByAgent(id: number, userId: string, updates: UpdateTaskRequest): Promise<Task | undefined>;
 
@@ -33,6 +38,25 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // --- Métodos de Usuário ---
+  async getUser(id: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user;
+  }
+
+  async upsertUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: insertUser,
+      })
+      .returning();
+    return user;
+  }
+
+  // --- Métodos de Tasks ---
   async getTasks(userId: string): Promise<Task[]> {
     return await db.select().from(tasks).where(eq(tasks.userId, userId)).orderBy(desc(tasks.createdAt));
   }
@@ -64,12 +88,10 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getTasksForAgent(userId: string): Promise<Task[]> {
-     // Agent sees all tasks for the user (could filter by pending/todo/in_progress)
      return await db.select().from(tasks).where(eq(tasks.userId, userId));
   }
 
   async updateTaskByAgent(id: number, userId: string, updates: UpdateTaskRequest): Promise<Task | undefined> {
-    // Agent updates a task belonging to the user
     const [updated] = await db
       .update(tasks)
       .set({ ...updates, updatedAt: new Date() })
@@ -78,12 +100,13 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
+  // --- Métodos de API Tokens ---
   async getApiTokens(userId: string): Promise<ApiToken[]> {
     return await db.select().from(apiTokens).where(eq(apiTokens.userId, userId)).orderBy(desc(apiTokens.createdAt));
   }
 
   async createApiToken(userId: string, request: CreateApiTokenRequest): Promise<ApiToken> {
-    const token = "oc_" + randomBytes(24).toString("hex"); // "oc_" prefix for OpenClaw
+    const token = "oc_" + randomBytes(24).toString("hex");
     const [apiToken] = await db
       .insert(apiTokens)
       .values({ 
@@ -103,7 +126,6 @@ export class DatabaseStorage implements IStorage {
     const [tokenRecord] = await db.select().from(apiTokens).where(eq(apiTokens.token, token));
     if (!tokenRecord) return undefined;
     
-    // Get the user associated with this token
     const [user] = await db.select().from(users).where(eq(users.id, tokenRecord.userId));
     return user;
   }
