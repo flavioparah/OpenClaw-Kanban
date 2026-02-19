@@ -10,7 +10,7 @@ export async function registerRoutes(
   httpServer: Server,
   app: Express
 ): Promise<Server> {
-  // Setup Replit Auth
+  // Setup Auth (Simulado para Coolify)
   await setupAuth(app);
   registerAuthRoutes(app);
 
@@ -99,9 +99,13 @@ export async function registerRoutes(
   // === API Token Routes ===
   
   app.get(api.apiTokens.list.path, isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
-    const tokens = await storage.getApiTokens(userId);
-    res.json(tokens);
+    try {
+      const userId = req.user.claims.sub;
+      const tokens = await storage.getApiTokens(userId);
+      res.json(tokens || []);
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao listar tokens" });
+    }
   });
 
   app.post(api.apiTokens.create.path, isAuthenticated, async (req: any, res) => {
@@ -111,22 +115,26 @@ export async function registerRoutes(
       const token = await storage.createApiToken(userId, input);
       res.status(201).json(token);
     } catch (err) {
+      console.error("Erro ao criar token:", err);
       if (err instanceof z.ZodError) {
         return res.status(400).json({ message: err.message });
       }
-      res.status(500).json({ message: "Internal Server Error" });
+      res.status(500).json({ message: "Falha ao gerar token" });
     }
   });
 
   app.delete(api.apiTokens.delete.path, isAuthenticated, async (req: any, res) => {
-    const userId = req.user.claims.sub;
-    await storage.deleteApiToken(Number(req.params.id), userId);
-    res.status(204).send();
+    try {
+      const userId = req.user.claims.sub;
+      await storage.deleteApiToken(Number(req.params.id), userId);
+      res.status(204).send();
+    } catch (error) {
+      res.status(500).json({ message: "Erro ao deletar token" });
+    }
   });
 
   // === Agent API Routes (Authenticated via Bearer Token) ===
   
-  // Middleware for API Token Auth
   const apiTokenAuth = async (req: any, res: any, next: any) => {
     const authHeader = req.headers.authorization;
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -134,14 +142,16 @@ export async function registerRoutes(
     }
     
     const token = authHeader.split(" ")[1];
-    const user = await storage.getUserByApiToken(token);
-    
-    if (!user) {
-      return res.status(401).json({ message: "Unauthorized: Invalid token" });
+    try {
+      const user = await storage.getUserByApiToken(token);
+      if (!user) {
+        return res.status(401).json({ message: "Unauthorized: Invalid token" });
+      }
+      req.agentUser = user;
+      next();
+    } catch (e) {
+      res.status(401).json({ message: "Unauthorized" });
     }
-    
-    req.agentUser = user;
-    next();
   };
 
   app.get(api.agent.listTasks.path, apiTokenAuth, async (req: any, res) => {
