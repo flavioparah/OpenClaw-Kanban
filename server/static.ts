@@ -2,17 +2,17 @@ import express, { type Express } from "express";
 import path, { dirname } from "path";
 import { fileURLToPath } from "url";
 
-// Em ES Modules, precisamos definir o __dirname manualmente assim:
+// Definição manual para compatibilidade com ES Modules no Node.js
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 export function serveStatic(app: Express) {
-  // Ajustando o caminho para encontrar a pasta public dentro de dist
+  // Caminho aponta para a pasta onde o Vite gera o front-end
   const distPath = path.resolve(__dirname, "..", "dist", "public");
 
   app.use(express.static(distPath));
 
-  // Rota curinga para garantir que o React Router funcione (SPA)
+  // Suporte para Single Page Application (React Router)
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api")) {
       return next();
