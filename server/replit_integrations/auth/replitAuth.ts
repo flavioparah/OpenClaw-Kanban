@@ -34,6 +34,7 @@ export async function setupAuth(app: Express) {
   app.use(passport.initialize());
   app.use(passport.session());
 
+  // Garante que o usuário simulado seja mantido na sessão
   passport.serializeUser((user: any, cb) => cb(null, user));
   passport.deserializeUser((user: any, cb) => cb(null, user));
 
@@ -45,12 +46,29 @@ export async function setupAuth(app: Express) {
 }
 
 export const isAuthenticated: RequestHandler = async (req, res, next) => {
-  // Simula um usuário logado para ignorar o bloqueio de login do Replit
-  (req as any).user = {
+  // Simula um usuário logado COMPLETO
+  // Adicionamos o campo 'claims' com 'sub' para evitar o erro de 'undefined' no front-end
+  const mockUser = {
     id: "admin",
     email: "admin@admin.com",
     firstName: "Admin",
-    expires_at: 9999999999
+    lastName: "User",
+    profileImageUrl: "",
+    expires_at: 9999999999,
+    claims: {
+      sub: "admin", // O ID que o sistema estava procurando
+      email: "admin@admin.com",
+      first_name: "Admin",
+      last_name: "User"
+    }
   };
+
+  (req as any).user = mockUser;
+  
+  // Forçamos o Passport a acreditar que estamos autenticados
+  if (typeof req.isAuthenticated !== 'function') {
+      req.isAuthenticated = () => true;
+  }
+
   return next(); 
 };
