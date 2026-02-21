@@ -1,0 +1,38 @@
+version: '3.8'
+services:
+  app:
+    build: .
+    restart: always
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      - SESSION_SECRET=${SESSION_SECRET}
+      - NODE_ENV=production
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - openclaw_net
+
+  db:
+    image: postgres:17-alpine
+    restart: always
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER:-admin}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-claw_pass}
+      - POSTGRES_DB=${POSTGRES_DB:-kanban}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTG-RES_USER:-admin} -d ${POSTGRES_DB:-kanban}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - openclaw_net
+
+networks:
+  openclaw_net:
+    driver: bridge
+
+volumes:
+  pgdata:
